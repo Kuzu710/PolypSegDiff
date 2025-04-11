@@ -4,15 +4,15 @@ __base__:
   - config/dataset_352x352.yaml
 
 model:
-  name: model.net8.net
+  name: model.net.net
   params:
     class_num: 1
     mask_chans: 1
 
 cond_uvit:
-  name: model.net8.EmptyObject
+  name: model.net.EmptyObject
   params:
-    conditioning_klass: model.net8.EmptyObject
+    conditioning_klass: model.net.EmptyObject
 
 diffusion_model:
   name: model.SimpleDiffSef.CondGaussianDiffusion
