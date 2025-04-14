@@ -19,7 +19,7 @@ set_random_seed(7)
 
 def get_loader(cfg):
     #cod10k_test_dataset = instantiate_from_config(cfg.test_dataset.COD10K)
-    camo_test_dataset = instantiate_from_config(cfg.test_dataset.CAMO)
+    polyp_test_dataset = instantiate_from_config(cfg.test_dataset.POLYP)
     #chameleon_test_dataset = instantiate_from_config(cfg.test_dataset.CHAMELEON)
     #nc4k_test_dataset = instantiate_from_config(cfg.test_dataset.NC4K)
 
@@ -28,8 +28,8 @@ def get_loader(cfg):
         batch_size=cfg.batch_size,
         collate_fn=collate
     )"""
-    camo_test_loader = DataLoader(
-        camo_test_dataset,
+    polyp_test_loader = DataLoader(
+        polyp_test_dataset,
         batch_size=cfg.batch_size,
         collate_fn=collate
     )
@@ -43,7 +43,7 @@ def get_loader(cfg):
         batch_size=cfg.batch_size,
         collate_fn=collate
     )"""
-    return camo_test_loader  #, cod10k_test_loader, chameleon_test_loader, nc4k_test_loader
+    return polyp_test_loader  #, cod10k_test_loader, chameleon_test_loader, nc4k_test_loader
 
 
 if __name__ == "__main__":
@@ -56,7 +56,7 @@ if __name__ == "__main__":
     parser.add_argument('--gradient_accumulate_every', type=int, default=1)
     parser.add_argument('--num_workers', type=int, default=8)
     parser.add_argument('--num_sample_steps', type=int, default=None)
-    parser.add_argument('--target_dataset', nargs='+', type=str, default=['CAMO', 'COD10K', 'CHAMELEON', 'NC4K'])
+    parser.add_argument('--target_dataset', nargs='+', type=str, default=['POLYP', 'COD10K', 'CHAMELEON', 'NC4K'])
     parser.add_argument('--time_ensemble', action='store_true')
     parser.add_argument('--batch_ensemble', action='store_true')
 
@@ -68,7 +68,7 @@ if __name__ == "__main__":
     if cfg.num_sample_steps is not None:
         cfg.diffusion_model.params.num_sample_steps = cfg.num_sample_steps
 
-    camo_test_loader = get_loader(cfg)
+    polyp_test_loader = get_loader(cfg)
 
     cond_uvit = instantiate_from_config(cfg.cond_uvit,
                                         conditioning_klass=get_obj_from_str(cfg.cond_uvit.params.conditioning_klass))
@@ -98,11 +98,11 @@ if __name__ == "__main__":
     )
 
     trainer.load(pretrained_path=cfg.checkpoint)
-    camo_test_loader = \
-        trainer.accelerator.prepare(camo_test_loader)
+    polyp_test_loader = \
+        trainer.accelerator.prepare(polyp_test_loader)
 
     dataset_map = {
-        'CAMO': camo_test_loader,
+        'POLYP': polyp_test_loader,
         #'COD10K': cod10k_test_loader,
         #'CHAMELEON': chameleon_test_loader,
         #'NC4K': nc4k_test_loader,
@@ -114,7 +114,7 @@ if __name__ == "__main__":
 
     for dataset, dataset_name in target_dataset:
         trainer.model.eval()
-        mask_path = Path(cfg.test_dataset.CAMO.params.image_root).parent.parent
+        mask_path = Path(cfg.test_dataset.POLYP.params.image_root).parent.parent
         print(mask_path)
         save_to = Path(cfg.results_folder) / dataset_name
         os.makedirs(save_to, exist_ok=True)
