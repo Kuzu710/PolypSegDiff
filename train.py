@@ -21,7 +21,7 @@ def get_loader(cfg):
         shuffle=True,
         num_workers=cfg.num_workers)
 
-    test_dataset = instantiate_from_config(cfg.test_dataset.CAMO)
+    test_dataset = instantiate_from_config(cfg.test_dataset.POLYP)
     #test_dataset_expand = SampleDataset(full_dataset=instantiate_from_config(cfg.test_dataset.COD10K), interval=10)
     #test_dataset = torch.utils.data.ConcatDataset([test_dataset, test_dataset_expand])
     #test_dataset_expand = SampleDataset(full_dataset=instantiate_from_config(cfg.test_dataset.NC4K), interval=30)
