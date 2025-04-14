@@ -1,34 +1,34 @@
 train_dataset:
   name: dataset.data_val.PolypObjDataset
   params:
-    image_root: '/opt/data/private/jyp/data/polyp/TrainDataset/image/'
-    gt_root: '/opt/data/private/jyp/data/polyp/TrainDataset/mask/'
+    image_root: '/TrainDataset/image/'
+    gt_root: '/TrainDataset/mask/'
     trainsize: 256
 
 test_dataset:
   COD10K:
     name: dataset.data_val.test_dataset
     params:
-      image_root: '/opt/data/private/jyp/data/polyp/ValDataset/images/'
-      gt_root: '/opt/data/private/jyp/data/polyp/ValDataset/masks/'
+      image_root: ''
+      gt_root: ''
       testsize: 256
   POLYP:
     name: dataset.data_val.test_dataset
     params:
-      image_root: '/opt/data/private/jyp/data/polyp/TestDataset/CVC-300/images/'
-      gt_root: '/opt/data/private/jyp/data/polyp/TestDataset/CVC-300/masks/'
+      image_root: '/polyp/TestDataset/CVC-300/images/'
+      gt_root: '/TestDataset/CVC-300/masks/'
       testsize: 256
   CHAMELEON:
     name: dataset.data_val.test_dataset
     params:
-      image_root: '/opt/data/private/jyp/data/polyp/TestDataset/Kvasir/images/'
-      gt_root: '/opt/data/private/jyp/data/polyp/TestDataset/Kvasir/masks/'
+      image_root: ''
+      gt_root: ''
       testsize: 256
   NC4K:
     name: dataset.data_val.test_dataset
     params:
-      image_root: '/media/datatset/COD10K/TestDataset/NC4K/Imgs/'
-      gt_root: '/media/datatset/COD10K/TestDataset/NC4K/GT/'
+      image_root: ''
+      gt_root: ''
       testsize: 256
   CDS2K:
     name: dataset.cds2k_dataset.cds2K_dataset
