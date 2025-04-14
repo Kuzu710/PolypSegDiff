@@ -1,7 +1,7 @@
-project_name: CamoDiffusion
+project_name: PSD
 
 __base__:
-  - config/dataset_352x352.yaml
+  - config/dataset_256x256.yaml
 
 model:
   name: model.net.net
