@@ -12,7 +12,7 @@ test_dataset:
       image_root: '/opt/data/private/jyp/data/polyp/ValDataset/images/'
       gt_root: '/opt/data/private/jyp/data/polyp/ValDataset/masks/'
       testsize: 256
-  CAMO:
+  POLYP:
     name: dataset.data_val.test_dataset
     params:
       image_root: '/opt/data/private/jyp/data/polyp/TestDataset/CVC-300/images/'
