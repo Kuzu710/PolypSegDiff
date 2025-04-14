@@ -462,9 +462,9 @@ class BasicConv2d(nn.Module):
         return x
 
 
-class CFM(nn.Module):
+class HAM(nn.Module):
     def __init__(self, channel):
-        super(CFM, self).__init__()
+        super(HAM, self).__init__()
         self.relu = nn.ReLU(True)
 
         self.upsample = nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True)
@@ -494,66 +494,6 @@ class CFM(nn.Module):
 
         return x1
 
-
-
-
-class GCN(nn.Module):
-    def __init__(self, num_state, num_node, bias=False):
-        super(GCN, self).__init__()
-        self.conv1 = nn.Conv1d(num_node, num_node, kernel_size=1)
-        self.relu = nn.ReLU(inplace=True)
-        self.conv2 = nn.Conv1d(num_state, num_state, kernel_size=1, bias=bias)
-
-    def forward(self, x):
-        h = self.conv1(x.permute(0, 2, 1)).permute(0, 2, 1)
-        h = h - x
-        h = self.relu(self.conv2(h))
-        return h
-
-
-class SAM(nn.Module):
-    def __init__(self, num_in=32, plane_mid=16, mids=4, normalize=False):
-        super(SAM, self).__init__()
-
-        self.normalize = normalize
-        self.num_s = int(plane_mid)
-        self.num_n = (mids) * (mids)
-        self.priors = nn.AdaptiveAvgPool2d(output_size=(mids + 2, mids + 2))
-
-        self.conv_state = nn.Conv2d(num_in, self.num_s, kernel_size=1)
-        self.conv_proj = nn.Conv2d(num_in, self.num_s, kernel_size=1)
-        self.gcn = GCN(num_state=self.num_s, num_node=self.num_n)
-        self.conv_extend = nn.Conv2d(self.num_s, num_in, kernel_size=1, bias=False)
-
-    def forward(self, x, edge):
-        edge = F.upsample(edge, (x.size()[-2], x.size()[-1]))
-
-        n, c, h, w = x.size()
-        edge = torch.nn.functional.softmax(edge, dim=1)[:, 1, :, :].unsqueeze(1)
-
-        x_state_reshaped = self.conv_state(x).view(n, self.num_s, -1)
-        x_proj = self.conv_proj(x)
-        x_mask = x_proj * edge
-
-        x_anchor1 = self.priors(x_mask)
-        x_anchor2 = self.priors(x_mask)[:, :, 1:-1, 1:-1].reshape(n, self.num_s, -1)
-        x_anchor = self.priors(x_mask)[:, :, 1:-1, 1:-1].reshape(n, self.num_s, -1)
-
-        x_proj_reshaped = torch.matmul(x_anchor.permute(0, 2, 1), x_proj.reshape(n, self.num_s, -1))
-        x_proj_reshaped = torch.nn.functional.softmax(x_proj_reshaped, dim=1)
-
-        x_rproj_reshaped = x_proj_reshaped
-
-        x_n_state = torch.matmul(x_state_reshaped, x_proj_reshaped.permute(0, 2, 1))
-        if self.normalize:
-            x_n_state = x_n_state * (1. / x_state_reshaped.size(2))
-        x_n_rel = self.gcn(x_n_state)
-
-        x_state_reshaped = torch.matmul(x_n_rel, x_rproj_reshaped)
-        x_state = x_state_reshaped.view(n, self.num_s, *x.size()[2:])
-        out = x + (self.conv_extend(x_state))
-
-        return out
 
 
 class ChannelAttention(nn.Module):
@@ -607,14 +547,12 @@ class net(nn.Module):
         self.Translayer3_1 = BasicConv2d(320, channel, 1)
         self.Translayer4_1 = BasicConv2d(512, channel, 1)
 
-        self.CFM = CFM(channel)
+        self.HAM = HAM(channel)
         self.ca = ChannelAttention(64)
         self.sa = SpatialAttention()
-        self.SAM = SAM()
         
         self.down05 = nn.Upsample(scale_factor=0.5, mode='bilinear', align_corners=True)
-        self.out_SAM = nn.Conv2d(channel, 1, 1)
-        self.out_CFM = nn.Conv2d(channel, 1, 1)
+        self.out_HAM = nn.Conv2d(channel, 1, 1)
         self.out = nn.Conv2d(channel*2, 1, 1)
 
 
@@ -626,35 +564,23 @@ class net(nn.Module):
         x3 = pvt[2]
         x4 = pvt[3]
     
-        # CIM
+        # DRM
         x1 = self.ca(x1) * x1 # channel attention
-        cim_feature = self.sa(x1) * x1 # spatial attention
+        drm_feature = self.sa(x1) * x1 # spatial attention
         
-        # CFM
+        # HAM
         x2_t = self.Translayer2_1(x2)  
         x3_t = self.Translayer3_1(x3)  
         x4_t = self.Translayer4_1(x4)  
-        cfm_feature = self.CFM(x4_t, x3_t, x2_t)
+        ham_feature = self.ham(x4_t, x3_t, x2_t)
        
         
-        # SAM
-        '''T2 = self.Translayer2_0(cim_feature)
-        T2 = self.down05(T2)
-        sam_feature = self.SAM(cfm_feature, T2)'''
-        
-        '''prediction1 = self.out_CFM(cfm_feature)
-        prediction2 = self.out_SAM(sam_feature)
-        print('prediction1', prediction1.shape)
-        print('prediction2', prediction2.shape)'''
-        
-        T2 = self.Translayer2_0(cim_feature)
+        T2 = self.Translayer2_0(drm_feature)
         T2 = self.down05(T2)
         
-        prediction3 = torch.cat((cfm_feature, T2), dim=1)
+        prediction3 = torch.cat((ham_feature, T2), dim=1)
         prediction3 = self.out(prediction3)
 
-        '''prediction1_8 = F.interpolate(prediction1, scale_factor=8, mode='bilinear') 
-        prediction2_8 = F.interpolate(prediction2, scale_factor=8, mode='bilinear') '''
         prediction3_8 = F.interpolate(prediction3, scale_factor=8, mode='bilinear')
          
         return prediction3_8
